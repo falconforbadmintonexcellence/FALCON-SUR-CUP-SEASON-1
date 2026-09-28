@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Falcon Sur Cup Season - 1</title>
+<style>
+:root{
+  --court:#1B4332; --court-light:#2D6A4F; --cork:#E4A11B; --cork-dark:#B9820F;
+  --bg:#F1F5F1; --card:#FFFFFF; --ink:#1E2422; --ink-soft:#5B6B63; --line:#DCE5DE;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#12201A; --card:#17271F; --ink:#EAF2ED; --ink-soft:#9FB3A8; --line:#25392F; }
+}
+:root[data-theme="dark"]{ --bg:#12201A; --card:#17271F; --ink:#EAF2ED; --ink-soft:#9FB3A8; --line:#25392F; }
+*{box-sizing:border-box;}
+html{height:100%;}
+body{margin:0; min-height:100%; background:var(--bg); color:var(--ink); font-family:-apple-system,"Segoe UI",Roboto,system-ui,sans-serif; line-height:1.45;}
+header{background:var(--court); color:#fff; padding:calc(env(safe-area-inset-top,0px) + 22px) 20px 18px; position:sticky; top:0; z-index:10;}
+header h1{margin:0 0 2px; font-size:1.4rem; font-weight:800; letter-spacing:-0.02em;}
+header p{margin:0; color:#CFE3D6; font-size:.9rem;}
+nav{display:flex; gap:4px; overflow-x:auto; background:var(--court-light); padding:0 12px;}
+nav button{appearance:none; border:none; background:transparent; color:#DCEFE2; padding:12px 14px; font-size:.9rem; font-weight:600; cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap;}
+nav button.active{color:#fff; border-bottom-color:var(--cork);}
+main{max-width:880px; margin:0 auto; padding:20px 16px 60px;}
+section{display:none;} section.active{display:block;}
+h2{font-size:1.1rem; margin:0 0 12px;}
+.card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:14px;}
+.btn{display:inline-block; margin-top:14px; background:var(--cork); color:#231600; border:none; padding:11px 18px; border-radius:7px; font-weight:700; font-size:.95rem; text-decoration:none; text-align:center;}
+.tag{display:inline-block; font-size:.72rem; font-weight:700; color:var(--court-light); background:rgba(45,106,79,.12); padding:2px 8px; border-radius:20px; margin-bottom:8px;}
+.badge-row{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;}
+.badge{font-size:.78rem; background:var(--bg); border:1px solid var(--line); border-radius:20px; padding:4px 10px; color:var(--ink-soft);}
+select{width:100%; padding:10px; border:1px solid var(--line); border-radius:7px; background:var(--bg); color:var(--ink); font-size:.95rem; font-family:inherit;}
+.bracket{display:flex; gap:22px; overflow-x:auto; padding-bottom:10px;}
+.round{display:flex; flex-direction:column; justify-content:space-around; min-width:200px; gap:14px;}
+.round h3{margin:0; font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft);}
+.match{background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:6px;}
+.slot{padding:7px 8px; border-radius:6px; font-size:.85rem;}
+.slot.winner{font-weight:800; color:var(--court-light);}
+.score{font-size:.72rem; color:var(--ink-soft); padding:0 8px 4px;}
+.champ{background:var(--court); color:#fff; border-radius:10px; padding:14px 16px; margin-bottom:10px;}
+.champ .name{font-size:1.05rem; font-weight:800; color:var(--cork);}
+.gallery{display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px;}
+.gallery img{width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; display:block;}
+.gallery figcaption{font-size:.75rem; color:var(--ink-soft); margin-top:4px;}
+.empty{color:var(--ink-soft); font-size:.88rem; padding:6px 0;}
+.sponsor-card{display:flex; gap:14px; align-items:flex-start; padding:12px 0; border-bottom:1px solid var(--line);}
+.sponsor-card:last-child{border-bottom:none;}
+.sponsor-card img{width:72px; height:72px; object-fit:contain; border-radius:8px; background:#fff; flex:none;}
+.sponsor-card .name{font-weight:700; margin-bottom:2px;}
+.sponsor-card .blurb{font-size:.88rem; color:var(--ink-soft);}
+.notice{background:#FFF4D6; color:#5A4200; border-radius:8px; padding:10px 12px; font-size:.85rem; margin-bottom:12px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏸 Falcon Sur Cup Badminton Tournament – Season 1</h1>
+  <p>15th &amp; 16th October 2026 · Falcon Badminton Academy, Senaya, Sur, Oman</p>
+</header>
+<nav id="nav"></nav>
+<main>
+  <div id="notice" class="notice" style="display:none"></div>
+  <section id="home">
+    <div class="card">
+      <span class="tag">Tournament Info</span>
+      <img class="poster" style="width:100%;border-radius:10px;display:block;margin-bottom:12px" src="poster.jpg" alt="Falcon Sur Cup poster">
+      <h2>Welcome</h2>
+      <p>Falcon for Badminton Excellence presents the Falcon Sur Cup – Badminton Tournament, Season 1, held at Falcon Badminton Court, Sur, Oman. Under the theme &ldquo;Learn to play, train to win,&rdquo; two days of competition on 15–16 October bring together Men's, Women's, and Kids' events for players of all levels. The tournament is about intense matches, community spirit, and one shared passion for badminton — follow along, support the players, and be part of the game.</p>
+      <p>Categories running this year:</p>
+      <div class="badge-row" id="catBadges"></div>
+    </div>
+    <div class="card"><h2>Champions</h2><div id="champList" class="empty">Champions will appear here once finals are decided.</div></div>
+  </section>
+  <section id="register">
+    <div class="card">
+      <span class="tag">Registration</span>
+      <h2>Register to play</h2>
+      <p>Entries are collected through our registration form. Pick your category and submit your details there.</p>
+      <a class="btn" href="https://docs.google.com/forms/d/e/1FAIpQLSdexV09s0_xrSbegsOMAn3Lc8-V15bA7hx26V9Qi_32LGs4XQ/viewform?usp=sharing" target="_blank" rel="noopener">Open registration form</a>
+      <div class="badge-row" id="regCatBadges" style="margin-top:16px"></div>
+    </div>
+  </section>
+  <section id="draws">
+    <div class="card">
+      <h2>Draws</h2>
+      <select id="drawCat"></select>
+      <div id="bracket" class="bracket" style="margin-top:14px"></div>
+    </div>
+  </section>
+  <section id="results">
+    <div class="card"><h2>Results</h2><div id="resultsBody"></div></div>
+  </section>
+  <section id="gallery">
+    <div class="card"><h2>Photos</h2><div class="gallery" id="galleryGrid"></div></div>
+  </section>
+  <section id="sponsors">
+    <div class="card"><h2>Our Sponsors</h2><div id="sponsorList"></div></div>
+  </section>
+</main>
+<script>
+// ===== ONE-TIME SETUP: paste your Google Sheet ID between the quotes =====
+// (the long code in the sheet link, between /d/ and /edit)
+const SHEET_ID = '1jlvlrxsxuSun0C_YekE6OOLsauW_Cet61beZ3oRk-E8';
+// ========================================================================
+
+const CATEGORIES = [
+  "Under 11 Boys Singles","Under 11 Girls Singles","Under 13 Boys Singles","Under 13 Girls Singles",
+  "Under 15 Boys Singles","Under 15 Girls Singles","Under 17 Boys Singles","Under 17 Girls Singles",
+  "Men's Doubles","Women's Doubles","Mixed Doubles"
+];
+const REFRESH_MS = 60000;
+let sponsors = [], matches = [], photos = [];
+
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// Small CSV parser (handles quotes, commas and line breaks inside cells)
+function parseCSV(text){
+  const rows = []; let row = [], cell = '', q = false;
+  for(let i=0;i<text.length;i++){
+    const ch = text[i];
+    if(q){
+      if(ch === '"'){ if(text[i+1] === '"'){ cell += '"'; i++; } else q = false; }
+      else cell += ch;
+    } else if(ch === '"') q = true;
+    else if(ch === ','){ row.push(cell); cell = ''; }
+    else if(ch === '\n'){ row.push(cell); rows.push(row); row = []; cell = ''; }
+    else if(ch !== '\r') cell += ch;
+  }
+  if(cell !== '' || row.length){ row.push(cell); rows.push(row); }
+  return rows;
+}
+async function loadTab(name){
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}&_=${Date.now()}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error(name);
+  const rows = parseCSV(await res.text());
+  const head = (rows.shift() || []).map(h => h.trim());
+  return rows.filter(r => r.some(c => c.trim() !== '')).map(r => Object.fromEntries(head.map((h,i) => [h, (r[i] || '').trim()])));
+}
+// Turn a Drive share link into a viewable image; bare file names load from this repo
+function imgUrl(v){
+  if(!v) return '';
+  if(/^https?:/i.test(v)){
+    const m = v.match(/\/d\/([\w-]+)/) || v.match(/[?&]id=([\w-]+)/);
+    if(m && /drive\.google\.com|docs\.google\.com/i.test(v)) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000`;
+    return v;
+  }
+  return v;
+}
+
+async function refresh(){
+  const notice = document.getElementById('notice');
+  if(SHEET_ID.startsWith('PASTE_')){ notice.style.display='block'; notice.textContent='Setup pending: the Google Sheet is not connected yet.'; return; }
+  try{
+    [sponsors, matches, photos] = await Promise.all([loadTab('Sponsors'), loadTab('Matches'), loadTab('Photos')]);
+    notice.style.display = 'none';
+  }catch(e){
+    notice.style.display='block';
+    notice.textContent = 'Could not load the latest data right now. Please refresh in a moment.';
+  }
+  renderAll();
+}
+
+const TABS = [["home","Home"],["register","Register"],["draws","Draws"],["results","Results"],["gallery","Gallery"],["sponsors","Sponsors"]];
+function buildNav(){
+  const nav = document.getElementById('nav');
+  nav.innerHTML = TABS.map(([id,label],i)=>`<button data-tab="${id}" class="${i===0?'active':''}">${label}</button>`).join('');
+  nav.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
+}
+function showTab(id){
+  document.querySelectorAll('main section').forEach(s=>s.classList.toggle('active', s.id===id));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active', b.dataset.tab===id));
+}
+function fillStatic(){
+  document.getElementById('drawCat').innerHTML = CATEGORIES.map(c=>`<option>${esc(c)}</option>`).join('');
+  document.getElementById('drawCat').addEventListener('change', renderBracket);
+  const badges = CATEGORIES.map(c=>`<span class="badge">${esc(c)}</span>`).join('');
+  document.getElementById('catBadges').innerHTML = badges;
+  document.getElementById('regCatBadges').innerHTML = badges;
+}
+const matchesFor = cat => matches.filter(m => m['Category'] === cat);
+
+function renderBracket(){
+  const cat = document.getElementById('drawCat').value;
+  const el = document.getElementById('bracket');
+  const rows = matchesFor(cat);
+  if(!rows.length){ el.innerHTML = '<p class="empty">No draw published yet for this category.</p>'; return; }
+  const order = []; rows.forEach(m => { if(!order.includes(m['Round'])) order.push(m['Round']); });
+  el.innerHTML = order.map(rd => `
+    <div class="round"><h3>${esc(rd)}</h3>
+      ${rows.filter(m => m['Round'] === rd).map(m => `
+        <div class="match">
+          ${['Player 1','Player 2'].map(k => {
+            const nm = m[k];
+            return `<div class="slot ${nm && m['Winner'] === nm ? 'winner' : ''}">${nm ? esc(nm) : 'TBD'}</div>`;
+          }).join('')}
+          ${m['Score'] ? `<div class="score">${esc(m['Score'])}</div>` : ''}
+        </div>`).join('')}
+    </div>`).join('');
+}
+function renderResults(){
+  const body = document.getElementById('resultsBody');
+  const champList = document.getElementById('champList');
+  let html = '', champs = [];
+  for(const cat of CATEGORIES){
+    const rows = matchesFor(cat);
+    const done = rows.filter(m => m['Winner']);
+    if(done.length){
+      html += `<div class="card"><span class="tag">${esc(cat)}</span>` + done.map(m => {
+        const loser = m['Winner'] === m['Player 1'] ? m['Player 2'] : m['Player 1'];
+        return `<div style="margin-top:6px"><strong>${esc(m['Round'])}:</strong> ${esc(m['Winner'])} def. ${esc(loser || 'bye')}${m['Score'] ? ' — ' + esc(m['Score']) : ''}</div>`;
+      }).join('') + `</div>`;
+    }
+    const fin = rows.find(m => /^final$/i.test(m['Round']) && m['Winner']);
+    if(fin) champs.push({cat, name: fin['Winner']});
+  }
+  body.innerHTML = html || '<p class="empty">No results yet.</p>';
+  champList.className = champs.length ? '' : 'empty';
+  champList.innerHTML = champs.length ? champs.map(c=>`<div class="champ"><div>${esc(c.cat)}</div><div class="name">${esc(c.name)}</div></div>`).join('') : 'Champions will appear here once finals are decided.';
+}
+function renderGallery(){
+  const list = photos.filter(p => p['Photo link']);
+  document.getElementById('galleryGrid').innerHTML = list.length
+    ? list.map(p=>`<figure style="margin:0"><img src="${esc(imgUrl(p['Photo link']))}" alt="${esc(p['Caption']||'Tournament photo')}" loading="lazy"><figcaption>${esc(p['Caption'])}</figcaption></figure>`).join('')
+    : '<p class="empty">No photos posted yet.</p>';
+}
+function renderSponsors(){
+  const list = sponsors.filter(s => s['Name']);
+  document.getElementById('sponsorList').innerHTML = list.length ? list.map(s=>`
+    <div class="sponsor-card">
+      ${s['Logo'] ? `<img src="${esc(imgUrl(s['Logo']))}" alt="${esc(s['Name'])}">` : ''}
+      <div><div class="name">${esc(s['Name'])}</div><div class="blurb">${esc(s['About']).replace(/\n/g,'<br>')}</div></div>
+    </div>`).join('') : '<div class="empty">Sponsors will be announced soon.</div>';
+}
+function renderAll(){ renderBracket(); renderResults(); renderGallery(); renderSponsors(); }
+
+buildNav(); fillStatic(); showTab('home'); refresh();
+setInterval(refresh, REFRESH_MS);
+</script>
+</body>
+</html>

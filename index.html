@@ -50,6 +50,8 @@ select, input[type=search]{width:100%; padding:10px; border:1px solid var(--line
 .sponsor-card .name{font-weight:700; margin-bottom:2px;}
 .sponsor-card .blurb{font-size:.88rem; color:var(--ink-soft);}
 .card.next{border-left:4px solid var(--cork);}
+.card ul{padding-left:20px; margin:6px 0 0;}
+.card a{color:var(--court-light);}
 .notice{background:#FFF4D6; color:#5A4200; border-radius:8px; padding:10px 12px; font-size:.85rem; margin-bottom:12px;}
 </style>
 </head>
@@ -70,7 +72,42 @@ select, input[type=search]{width:100%; padding:10px; border:1px solid var(--line
       <p>Categories running this year:</p>
       <div class="badge-row" id="catBadges"></div>
     </div>
+    <div class="card">
+      <span class="tag">About the Organizer</span>
+      <h2>Falcon for Badminton Excellence</h2>
+      <p>Falcon for Badminton Excellence is committed to developing badminton talent and encouraging active lifestyles within the community. Through quality coaching, tournaments, and community programs, we strive to inspire young athletes and provide opportunities for players of all levels to compete and grow. Whether you are a beginner or advanced, we can guide you.</p>
+      <p><strong>What we offer</strong></p>
+      <ul>
+        <li>Training sessions for kids and adults.</li>
+        <li>Separate coaching sessions for ladies.</li>
+        <li>Memberships for every player: individual, group, family, corporate and weekend memberships.</li>
+      </ul>
+      <p><strong>Our facilities</strong></p>
+      <ul>
+        <li>Two badminton courts, air-conditioned, with synthetic mats.</li>
+        <li>CCTV surveillance.</li>
+        <li>Table tennis available if you are interested.</li>
+      </ul>
+      <p><strong>Our branches</strong></p>
+      <ul>
+        <li>Main Branch: Qurm, Muscat</li>
+        <li>Branch: Sur, Oman</li>
+      </ul>
+      <p><strong>Why we host this tournament</strong></p>
+      <ul>
+        <li>Promote badminton in Sur and across Oman.</li>
+        <li>Encourage youth and women to participate in sports.</li>
+        <li>Identify and develop emerging badminton talent.</li>
+        <li>Foster sportsmanship and healthy competition.</li>
+        <li>Build a stronger badminton community.</li>
+      </ul>
+    </div>
     <div class="card"><h2>Champions</h2><div id="champList" class="empty">Champions will appear here once finals are decided.</div></div>
+    <div class="card">
+      <span class="tag">Contact</span>
+      <h2>Get in touch</h2>
+      <p>Falcon for Badminton Excellence<br>📍 Sur, Oman<br>📞 <a href="tel:+96898865170">98865170</a><br>📧 <a href="mailto:falconforbadmintonexcellence@gmail.com">falconforbadmintonexcellence@gmail.com</a></p>
+    </div>
   </section>
   <section id="register">
     <div class="card">
@@ -295,7 +332,7 @@ function renderSponsors(){
 function renderAll(){ renderFind(); renderBracket(); renderResults(); renderGallery(); renderSponsors(); }
 
 buildNav(); fillStatic(); showTab('home'); refresh();
-setInterval(refresh, REFRESH_MS);
+setInterval(() => { if(!document.hidden) refresh(); }, REFRESH_MS);
 </script>
 </body>
 </html>

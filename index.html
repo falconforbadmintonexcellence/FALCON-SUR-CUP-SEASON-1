@@ -52,6 +52,31 @@ select, input[type=search]{width:100%; padding:10px; border:1px solid var(--line
 .card.next{border-left:4px solid var(--cork);}
 .card ul{padding-left:20px; margin:6px 0 0;}
 .card a{color:var(--court-light);}
+
+.partners{overflow:hidden; background:#fff; border-radius:10px; padding:14px 0;}
+.partners .track{display:flex; gap:40px; width:max-content; animation:scroll 28s linear infinite;}
+.partners:hover .track{animation-play-state:paused;}
+.partners img{height:64px; width:auto; max-width:160px; object-fit:contain; flex:none;}
+@keyframes scroll{to{transform:translateX(-50%);}}
+.spot{display:flex; gap:22px; align-items:center; flex-wrap:wrap; min-height:190px;}
+.spot .logo{width:190px; height:150px; background:#fff; border-radius:12px; display:flex; align-items:center; justify-content:center; padding:12px; flex:none; margin:0 auto;}
+.spot .logo img{max-width:100%; max-height:100%; object-fit:contain;}
+.spot .info{flex:1; min-width:220px;}
+.spot .info .name{font-size:1.15rem; font-weight:800; margin-bottom:6px;}
+.spot .info .blurb{font-size:.92rem; color:var(--ink-soft);}
+.dots{display:flex; gap:8px; justify-content:center; margin-top:14px;}
+.dots button{width:10px; height:10px; border-radius:50%; border:none; background:var(--line); padding:0; cursor:pointer;}
+.dots button.on{background:var(--cork);}
+.sgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px;}
+.scard{background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; display:flex; flex-direction:column;}
+.scard .logo{background:#fff; height:140px; display:flex; align-items:center; justify-content:center; padding:14px;}
+.scard .logo img{max-width:100%; max-height:100%; object-fit:contain;}
+.scard .body{padding:14px;}
+.scard .name{font-weight:800; margin-bottom:6px;}
+.scard .blurb{font-size:.86rem; color:var(--ink-soft); display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden;}
+.scard .blurb.open{display:block;}
+.scard .more{background:none; border:none; color:var(--court-light); font-weight:700; padding:6px 0 0; cursor:pointer; font-size:.82rem;}
+@media (prefers-reduced-motion: reduce){ .partners .track{animation:none;} }
 .notice{background:#FFF4D6; color:#5A4200; border-radius:8px; padding:10px 12px; font-size:.85rem; margin-bottom:12px;}
 </style>
 </head>
@@ -72,6 +97,7 @@ select, input[type=search]{width:100%; padding:10px; border:1px solid var(--line
       <p>Categories running this year:</p>
       <div class="badge-row" id="catBadges"></div>
     </div>
+    <div class="card" id="partnerCard" style="display:none"><span class="tag">Proudly supported by</span><div class="partners"><div class="track" id="partnerTrack"></div></div></div>
     <div class="card">
       <span class="tag">About the Organizer</span>
       <h2>Falcon for Badminton Excellence</h2>
@@ -138,7 +164,8 @@ select, input[type=search]{width:100%; padding:10px; border:1px solid var(--line
     <div class="card"><h2>Photos</h2><div class="gallery" id="galleryGrid"></div></div>
   </section>
   <section id="sponsors">
-    <div class="card"><h2>Our Sponsors</h2><div id="sponsorList"></div></div>
+    <div class="card" id="spotCard" style="display:none"><span class="tag">Featured Sponsor</span><div id="spotlight"></div><div class="dots" id="spotDots"></div></div>
+    <div class="card"><h2>Our Sponsors</h2><div class="sgrid" id="sponsorList"></div></div>
   </section>
 </main>
 <script>
@@ -321,19 +348,48 @@ function renderGallery(){
     ? list.map(p=>`<figure style="margin:0"><img src="${esc(imgUrl(p['Photo link']))}" alt="${esc(p['Caption']||'Tournament photo')}" loading="lazy"><figcaption>${esc(p['Caption'])}</figcaption></figure>`).join('')
     : '<p class="empty">No photos posted yet.</p>';
 }
+let spotTimer = null, spotIdx = 0;
+function sortedSponsors(){
+  return sponsors.filter(s => s['Name']).map((s,i) => ({s,i})).sort((a,b) => {
+    const na = parseFloat(a.s['Order']), nb = parseFloat(b.s['Order']);
+    const x = isNaN(na) ? Infinity : na, y = isNaN(nb) ? Infinity : nb;
+    return x === y ? a.i - b.i : x - y;
+  }).map(o => o.s);
+}
+const logoImg = s => s['Logo'] ? `<img src="${esc(imgUrl(s['Logo']))}" alt="${esc(s['Name'])}" onerror="this.style.display='none'">` : '';
+function showSpot(i){
+  const list = sortedSponsors(); if(!list.length) return;
+  spotIdx = (i + list.length) % list.length;
+  const s = list[spotIdx];
+  document.getElementById('spotlight').innerHTML = `<div class="spot">
+    <div class="logo">${logoImg(s)}</div>
+    <div class="info"><div class="name">${esc(s['Name'])}</div><div class="blurb">${esc(s['About']).replace(/\n/g,'<br>')}</div></div></div>`;
+  document.getElementById('spotDots').innerHTML = list.map((_, k) => `<button class="${k===spotIdx?'on':''}" aria-label="Sponsor ${k+1}" onclick="showSpot(${k}); startSpot()"></button>`).join('');
+}
+function startSpot(){
+  clearInterval(spotTimer);
+  if(sortedSponsors().length > 1 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+    spotTimer = setInterval(() => showSpot(spotIdx + 1), 6000);
+}
 function renderSponsors(){
-  const list = sponsors.filter(s => s['Name'])
-    .map((s,i) => ({s,i}))
-    .sort((a,b) => {
-      const na = parseFloat(a.s['Order']), nb = parseFloat(b.s['Order']);
-      const x = isNaN(na) ? Infinity : na, y = isNaN(nb) ? Infinity : nb;
-      return x === y ? a.i - b.i : x - y;
-    }).map(o => o.s);
-  document.getElementById('sponsorList').innerHTML = list.length ? list.map(s=>`
-    <div class="sponsor-card">
-      ${s['Logo'] ? `<img src="${esc(imgUrl(s['Logo']))}" alt="${esc(s['Name'])}">` : ''}
-      <div><div class="name">${esc(s['Name'])}</div><div class="blurb">${esc(s['About']).replace(/\n/g,'<br>')}</div></div>
-    </div>`).join('') : '<div class="empty">Sponsors will be announced soon.</div>';
+  const list = sortedSponsors();
+  const grid = document.getElementById('sponsorList');
+  document.getElementById('spotCard').style.display = list.length ? 'block' : 'none';
+  if(!list.length){ grid.innerHTML = '<div class="empty">Sponsors will be announced soon.</div>'; clearInterval(spotTimer); return; }
+  grid.innerHTML = list.map(s => `<div class="scard">
+      <div class="logo">${logoImg(s)}</div>
+      <div class="body"><div class="name">${esc(s['Name'])}</div>
+        <div class="blurb">${esc(s['About']).replace(/\n/g,'<br>')}</div>
+        <button class="more" onclick="const b=this.previousElementSibling; b.classList.toggle('open'); this.textContent=b.classList.contains('open')?'Show less':'Read more'">Read more</button>
+      </div></div>`).join('');
+  showSpot(Math.min(spotIdx, list.length - 1)); startSpot();
+  renderPartners(list);
+}
+function renderPartners(list){
+  const withLogo = list.filter(s => s['Logo']);
+  document.getElementById('partnerCard').style.display = withLogo.length ? 'block' : 'none';
+  const items = withLogo.map(s => `<img src="${esc(imgUrl(s['Logo']))}" alt="${esc(s['Name'])}" onerror="this.style.display='none'">`).join('');
+  document.getElementById('partnerTrack').innerHTML = items + items;
 }
 function renderRegistered(){
   const el = document.getElementById('regList');

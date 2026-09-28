@@ -117,6 +117,10 @@ select, input[type=search]{width:100%; padding:10px; border:1px solid var(--line
       <a class="btn" href="https://docs.google.com/forms/d/e/1FAIpQLSdexV09s0_xrSbegsOMAn3Lc8-V15bA7hx26V9Qi_32LGs4XQ/viewform?usp=sharing" target="_blank" rel="noopener">Open registration form</a>
       <div class="badge-row" id="regCatBadges" style="margin-top:16px"></div>
     </div>
+    <div class="card">
+      <h2>Registered players</h2>
+      <div id="regList" class="empty">Registered players will be listed here.</div>
+    </div>
   </section>
   <section id="draws">
     <div class="card">
@@ -146,10 +150,10 @@ const SHEET_ID = '1jlvlrxsxuSun0C_YekE6OOLsauW_Cet61beZ3oRk-E8';
 const CATEGORIES = [
   "Under 11 Boys Singles","Under 11 Girls Singles","Under 13 Boys Singles","Under 13 Girls Singles",
   "Under 15 Boys Singles","Under 15 Girls Singles","Under 17 Boys Singles","Under 17 Girls Singles",
-  "Men's Doubles","Women's Doubles","Mixed Doubles"
+  "Men's Doubles - D","Men's Doubles - B","Women's Doubles","Mixed Doubles - B"
 ];
 const REFRESH_MS = 30000;
-let sponsors = [], matches = [], photos = [];
+let sponsors = [], matches = [], photos = [], registered = [];
 
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -193,6 +197,8 @@ async function refresh(){
   if(SHEET_ID.startsWith('PASTE_')){ notice.style.display='block'; notice.textContent='Setup pending: the Google Sheet is not connected yet.'; return; }
   try{
     [sponsors, matches, photos] = await Promise.all([loadTab('Sponsors'), loadTab('Matches'), loadTab('Photos')]);
+    // optional tab: names only, pulled from the private registration sheet
+    registered = (await loadTab('Registered').catch(() => [])).filter(r => r['Player'] && r['Event']);
     notice.style.display = 'none';
   }catch(e){
     notice.style.display='block';
@@ -329,7 +335,24 @@ function renderSponsors(){
       <div><div class="name">${esc(s['Name'])}</div><div class="blurb">${esc(s['About']).replace(/\n/g,'<br>')}</div></div>
     </div>`).join('') : '<div class="empty">Sponsors will be announced soon.</div>';
 }
-function renderAll(){ renderFind(); renderBracket(); renderResults(); renderGallery(); renderSponsors(); }
+function renderRegistered(){
+  const el = document.getElementById('regList');
+  if(!registered.length){ el.className = 'empty'; el.textContent = 'Registered players will be listed here.'; return; }
+  const clean = e => e.replace(/\s*\(.*?\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+  const groups = {}; const order = [];
+  registered.forEach(r => {
+    const ev = clean(r['Event']);
+    if(!groups[ev]){ groups[ev] = []; order.push(ev); }
+    groups[ev].push(r['Partner'] ? `${r['Player']} / ${r['Partner']}` : r['Player']);
+  });
+  el.className = '';
+  el.innerHTML = `<p style="margin:0 0 10px;color:var(--ink-soft);font-size:.88rem">${registered.length} registrations so far</p>` +
+    order.map(ev => `<details style="border-top:1px solid var(--line);padding:8px 0">
+      <summary style="cursor:pointer;font-weight:700">${esc(ev)} (${groups[ev].length})</summary>
+      <ol style="margin:8px 0 0;padding-left:22px">${groups[ev].map(n => `<li>${esc(n)}</li>`).join('')}</ol>
+    </details>`).join('');
+}
+function renderAll(){ renderRegistered(); renderFind(); renderBracket(); renderResults(); renderGallery(); renderSponsors(); }
 
 buildNav(); fillStatic(); showTab('home'); refresh();
 setInterval(() => { if(!document.hidden) refresh(); }, REFRESH_MS);

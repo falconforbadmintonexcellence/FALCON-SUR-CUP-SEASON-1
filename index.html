@@ -40,9 +40,14 @@ select, input[type=search]{width:100%; padding:10px; border:1px solid var(--line
 .score{font-size:.72rem; color:var(--ink-soft); padding:0 8px 4px;}
 .champ{background:var(--court); color:#fff; border-radius:10px; padding:14px 16px; margin-bottom:10px;}
 .champ .name{font-size:1.05rem; font-weight:800; color:var(--cork);}
-.gallery{display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px;}
-.gallery img{width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; display:block;}
-.gallery figcaption{font-size:.75rem; color:var(--ink-soft); margin-top:4px;}
+.gallery{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px;}
+.gallery img{width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:10px; display:block; cursor:zoom-in;}
+.gallery figcaption{font-size:.82rem; color:var(--ink-soft); margin-top:6px;}
+.lightbox{position:fixed; inset:0; background:rgba(0,0,0,.9); display:none; align-items:center; justify-content:center; z-index:100; padding:20px; padding-top:calc(20px + env(safe-area-inset-top,0px));}
+.lightbox.open{display:flex;}
+.lightbox img{max-width:100%; max-height:90vh; border-radius:8px;}
+.lightbox .lbcap{color:#fff; text-align:center; margin-top:10px; font-size:.9rem;}
+.lightbox .lbclose{position:absolute; top:calc(16px + env(safe-area-inset-top,0px)); right:16px; color:#fff; font-size:1.8rem; background:none; border:none; cursor:pointer; line-height:1;}
 .empty{color:var(--ink-soft); font-size:.88rem; padding:6px 0;}
 .sponsor-card{display:flex; gap:14px; align-items:flex-start; padding:12px 0; border-bottom:1px solid var(--line);}
 .sponsor-card:last-child{border-bottom:none;}
@@ -86,6 +91,10 @@ select, input[type=search]{width:100%; padding:10px; border:1px solid var(--line
   <p>15th &amp; 16th October 2026 · Falcon Badminton Academy, Senaya, Sur, Oman</p>
 </header>
 <nav id="nav"></nav>
+<div class="lightbox" id="lightbox" onclick="closeLB(event)">
+  <button class="lbclose" onclick="closeLB(event)" aria-label="Close">&times;</button>
+  <div><img id="lbImg" src="" alt=""><div class="lbcap" id="lbCap"></div></div>
+</div>
 <main>
   <div id="notice" class="notice" style="display:none"></div>
   <section id="home">
@@ -345,8 +354,19 @@ function renderFind(){
 function renderGallery(){
   const list = photos.filter(p => p['Photo link']);
   document.getElementById('galleryGrid').innerHTML = list.length
-    ? list.map(p=>`<figure style="margin:0"><img src="${esc(imgUrl(p['Photo link']))}" alt="${esc(p['Caption']||'Tournament photo')}" loading="lazy"><figcaption>${esc(p['Caption'])}</figcaption></figure>`).join('')
+    ? list.map((p,i)=>`<figure style="margin:0"><img src="${esc(imgUrl(p['Photo link']))}" alt="${esc(p['Caption']||'Tournament photo')}" loading="lazy" onclick="openLB(${i})"><figcaption>${esc(p['Caption'])}</figcaption></figure>`).join('')
     : '<p class="empty">No photos posted yet.</p>';
+}
+function openLB(i){
+  const p = photos.filter(p => p['Photo link'])[i];
+  if(!p) return;
+  document.getElementById('lbImg').src = imgUrl(p['Photo link']);
+  document.getElementById('lbCap').textContent = p['Caption'] || '';
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLB(e){
+  if(e) e.stopPropagation();
+  document.getElementById('lightbox').classList.remove('open');
 }
 let spotTimer = null, spotIdx = 0;
 function sortedSponsors(){

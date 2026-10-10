@@ -82,6 +82,16 @@ select, input[type=search]{width:100%; padding:10px; border:1px solid var(--line
 .scard .blurb.open{display:block;}
 .scard .more{background:none; border:none; color:var(--court-light); font-weight:700; padding:6px 0 0; cursor:pointer; font-size:.82rem;}
 @media (prefers-reduced-motion: reduce){ .partners .track{animation:none;} }
+.carousel{position:relative; overflow:hidden; border-radius:10px; background:#0d1511; margin-bottom:12px; touch-action:pan-y;}
+.cs-track{display:flex; transition:transform .5s ease;}
+.cs-slide{position:relative; min-width:100%; height:min(78vh,640px); display:flex; align-items:center; justify-content:center;}
+.cs-slide img{max-width:100%; max-height:100%; object-fit:contain; cursor:zoom-in;}
+.cs-cap{position:absolute; left:0; right:0; bottom:0; padding:26px 14px 30px; background:linear-gradient(transparent,rgba(0,0,0,.65)); color:#fff; font-size:.9rem; text-align:center;}
+.cs-btn{position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,.45); color:#fff; border:none; width:38px; height:38px; border-radius:50%; font-size:1.4rem; cursor:pointer; line-height:1; padding:0;}
+.cs-btn.prev{left:8px;} .cs-btn.next{right:8px;}
+.cs-dots{position:absolute; bottom:10px; left:0; right:0; display:flex; justify-content:center; gap:8px;}
+.cs-dots button{width:9px; height:9px; border-radius:50%; border:none; background:rgba(255,255,255,.5); padding:0; cursor:pointer;}
+.cs-dots button.on{background:var(--cork);}
 .notice{background:#FFF4D6; color:#5A4200; border-radius:8px; padding:10px 12px; font-size:.85rem; margin-bottom:12px;}
 </style>
 </head>
@@ -100,7 +110,7 @@ select, input[type=search]{width:100%; padding:10px; border:1px solid var(--line
   <section id="home">
     <div class="card">
       <span class="tag">Tournament Info</span>
-      <img class="poster" style="width:100%;border-radius:10px;display:block;margin-bottom:12px" src="poster.jpg" alt="Falcon Sur Cup poster">
+      <div class="carousel" id="carousel"></div>
       <h2>Welcome</h2>
       <p>Falcon for Badminton Excellence presents the Falcon Sur Cup – Badminton Tournament, Season 1, held at Falcon Badminton Court, Sur, Oman. Under the theme &ldquo;Learn to play, train to win,&rdquo; two days of competition on 15–16 October bring together Men's, Women's, and Kids' events for players of all levels. The tournament is about intense matches, community spirit, and one shared passion for badminton — follow along, support the players, and be part of the game.</p>
       <p>Categories running this year:</p>
@@ -193,7 +203,7 @@ const CATEGORIES = [
   "Men's Doubles - D","Men's Doubles - B","Women's Doubles","Mixed Doubles - B"
 ];
 const REFRESH_MS = 30000;
-let sponsors = [], matches = [], photos = [], registered = [];
+let sponsors = [], matches = [], photos = [], registered = [], banners = [];
 
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -239,6 +249,8 @@ async function refresh(){
     [sponsors, matches, photos] = await Promise.all([loadTab('Sponsors'), loadTab('Matches'), loadTab('Photos')]);
     // optional tab: names only, pulled from the private registration sheet
     registered = (await loadTab('Registered').catch(() => [])).filter(r => r['Player'] && r['Event']);
+    // optional tab: extra slides for the Home carousel (columns: Image, Caption)
+    banners = (await loadTab('Banners').catch(() => [])).filter(r => r['Image']);
     notice.style.display = 'none';
   }catch(e){
     notice.style.display='block';
@@ -364,8 +376,11 @@ function renderGallery(){
 function openLB(i){
   const p = photos.filter(p => p['Photo link'])[i];
   if(!p) return;
-  document.getElementById('lbImg').src = imgUrl(p['Photo link']);
-  document.getElementById('lbCap').textContent = p['Caption'] || '';
+  openLBsrc(imgUrl(p['Photo link']), p['Caption'] || '');
+}
+function openLBsrc(src, cap){
+  document.getElementById('lbImg').src = src;
+  document.getElementById('lbCap').textContent = cap || '';
   document.getElementById('lightbox').classList.add('open');
 }
 function closeLB(e){
@@ -415,6 +430,52 @@ function renderPartners(list){
   const items = withLogo.map(s => `<img src="${esc(imgUrl(s['Logo']))}" alt="${esc(s['Name'])}" onerror="this.style.display='none'">`).join('');
   document.getElementById('partnerTrack').innerHTML = items + items;
 }
+let carIdx = 0, carCount = 1, carTimer = null, carSig = '';
+function carSlides(){
+  const extra = banners.filter(b => b['Image']).map(b => ({src: imgUrl(b['Image']), cap: b['Caption'] || ''}));
+  return [{src: 'poster.jpg', cap: ''}, ...extra];
+}
+function goSlide(i){
+  carIdx = ((i % carCount) + carCount) % carCount;
+  const t = document.getElementById('csTrack');
+  if(t) t.style.transform = `translateX(-${carIdx * 100}%)`;
+  document.querySelectorAll('#carousel .cs-dots button').forEach((d, k) => d.classList.toggle('on', k === carIdx));
+}
+function stopCar(){ clearInterval(carTimer); }
+function startCar(){
+  stopCar();
+  if(carCount > 1 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+    carTimer = setInterval(() => goSlide(carIdx + 1), 5000);
+}
+function renderCarousel(){
+  const slides = carSlides();
+  const sig = JSON.stringify(slides);
+  if(sig === carSig) return;          // unchanged: keep the current slide, don't restart
+  carSig = sig;
+  carCount = slides.length;
+  const el = document.getElementById('carousel');
+  el.innerHTML = `<div class="cs-track" id="csTrack">${slides.map((s, i) => `<div class="cs-slide">
+      <img src="${esc(s.src)}" alt="${esc(s.cap || 'Falcon Sur Cup photo ' + (i + 1))}">
+      ${s.cap ? `<div class="cs-cap">${esc(s.cap)}</div>` : ''}</div>`).join('')}</div>`;
+  el.querySelectorAll('.cs-slide img').forEach((im, i) => {
+    im.addEventListener('click', () => openLBsrc(slides[i].src, slides[i].cap));
+    im.addEventListener('error', () => { im.style.display = 'none'; });
+  });
+  if(carCount > 1){
+    el.insertAdjacentHTML('beforeend', `<button class="cs-btn prev" aria-label="Previous photo">&#8249;</button><button class="cs-btn next" aria-label="Next photo">&#8250;</button><div class="cs-dots">${slides.map((_, i) => `<button aria-label="Photo ${i + 1}"></button>`).join('')}</div>`);
+    el.querySelector('.prev').onclick = () => { goSlide(carIdx - 1); startCar(); };
+    el.querySelector('.next').onclick = () => { goSlide(carIdx + 1); startCar(); };
+    el.querySelectorAll('.cs-dots button').forEach((d, i) => { d.onclick = () => { goSlide(i); startCar(); }; });
+    let tx = null;
+    el.ontouchstart = e => { tx = e.touches[0].clientX; stopCar(); };
+    el.ontouchend = e => {
+      if(tx !== null){ const dx = e.changedTouches[0].clientX - tx; if(Math.abs(dx) > 40) goSlide(carIdx + (dx < 0 ? 1 : -1)); }
+      tx = null; startCar();
+    };
+    el.onmouseenter = stopCar; el.onmouseleave = startCar;
+  }
+  goSlide(carIdx); startCar();
+}
 function renderRegistered(){
   const el = document.getElementById('regList');
   if(!registered.length){ el.className = 'empty'; el.textContent = 'Registered players will be listed here.'; return; }
@@ -432,9 +493,9 @@ function renderRegistered(){
       <ol style="margin:8px 0 0;padding-left:22px">${groups[ev].map(n => `<li>${esc(n)}</li>`).join('')}</ol>
     </details>`).join('');
 }
-function renderAll(){ renderRegistered(); renderFind(); renderBracket(); renderResults(); renderGallery(); renderSponsors(); }
+function renderAll(){ renderCarousel(); renderRegistered(); renderFind(); renderBracket(); renderResults(); renderGallery(); renderSponsors(); }
 
-buildNav(); fillStatic(); showTab('home'); refresh();
+buildNav(); fillStatic(); showTab('home'); renderCarousel(); refresh();
 setInterval(() => { if(!document.hidden) refresh(); }, REFRESH_MS);
 </script>
 <footer style="text-align:center;padding:18px 16px 30px;">

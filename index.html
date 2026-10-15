@@ -31,7 +31,7 @@ h2{font-size:1.1rem; margin:0 0 12px;}
 .badge-row{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;}
 .badge{font-size:.78rem; background:var(--bg); border:1px solid var(--line); border-radius:20px; padding:4px 10px; color:var(--ink-soft);}
 select, input[type=search]{width:100%; padding:10px; border:1px solid var(--line); border-radius:7px; background:var(--bg); color:var(--ink); font-size:.95rem; font-family:inherit;}
-.bracket{display:flex; gap:22px; overflow-x:auto; padding-bottom:10px;}
+.bracket{overflow-x:auto; padding-bottom:10px;}
 .round{display:flex; flex-direction:column; justify-content:space-around; min-width:200px; gap:14px;}
 .round h3{margin:0; font-size:.78rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft);}
 .match{background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:6px;}
@@ -111,6 +111,36 @@ select, input[type=search]{width:100%; padding:10px; border:1px solid var(--line
 .plist .no{min-width:1.8em; color:var(--ink-soft); font-weight:700; font-size:.8rem;}
 .plist .amp{color:var(--cork-dark); font-weight:700; margin:0 3px;}
 .plist .pnote{display:block; font-size:.75rem; color:var(--ink-soft); font-style:italic; margin-top:2px;}
+.bk{display:inline-block; min-width:max-content;}
+.bk-head, .bk-body{display:flex;}
+.bk-col{flex:0 0 230px; width:230px;}
+.bk-head .bk-col{padding:0 18px 10px; font-size:.72rem; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-soft);}
+.bk-round{display:flex; flex-direction:column;}
+.mw{flex:1; display:flex; align-items:center; position:relative; padding:0 18px;}
+.m{width:100%; background:var(--card); border:1px solid var(--line); border-radius:8px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.08);}
+.m .p{display:flex; justify-content:space-between; align-items:center; gap:8px; padding:7px 10px; font-size:.85rem; min-height:32px; border-bottom:1px solid var(--line);}
+.m .p:last-of-type{border-bottom:none;}
+.m .nm{overflow-wrap:anywhere;}
+.m .p.won{font-weight:800; background:rgba(228,161,27,.16); box-shadow:inset 3px 0 0 var(--cork);}
+.m .p.lost{color:var(--ink-soft);}
+.m .p.tbd, .m .p.bye{color:var(--ink-soft); font-style:italic;}
+.m .tick{color:var(--cork-dark); font-weight:800;}
+.m .mm{font-size:.7rem; color:var(--ink-soft); background:var(--bg); padding:4px 10px; border-top:1px solid var(--line);}
+:root{--conn:#B9C9BF; --conn-done:#2D6A4F;}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--conn:#34493E; --conn-done:#4FB07F;} }
+:root[data-theme="dark"]{--conn:#34493E; --conn-done:#4FB07F;}
+.mw.hasprev::before{content:''; position:absolute; left:0; width:18px; top:50%; border-top:2px solid var(--conn);}
+.mw.hasnext::after{content:''; position:absolute; right:0; width:18px; border:0 solid var(--conn);}
+.mw.hasnext.top::after{top:50%; height:50%; border-top-width:2px; border-right-width:2px;}
+.mw.hasnext.bot::after{bottom:50%; height:50%; border-bottom-width:2px; border-right-width:2px;}
+.mw.hasnext.solo::after{top:50%; height:0; border-top-width:2px;}
+.mw.done::after{border-color:var(--conn-done);}
+.mw.fed::before{border-color:var(--conn-done);}
+.champ-box{width:100%; background:var(--court); color:#fff; border-radius:10px; text-align:center; padding:12px 10px;}
+.champ-box .trophy{font-size:1.4rem; line-height:1;}
+.champ-box .cn{font-weight:800; color:var(--cork); margin-top:4px; overflow-wrap:anywhere;}
+.bk-hint{display:none; margin:10px 0 0; font-size:.8rem; color:var(--ink-soft);}
+@media (max-width:700px){ .bk-hint{display:block;} }
 .notice{background:#FFF4D6; color:#5A4200; border-radius:8px; padding:10px 12px; font-size:.85rem; margin-bottom:12px;}
 </style>
 </head>
@@ -190,6 +220,7 @@ select, input[type=search]{width:100%; padding:10px; border:1px solid var(--line
     <div class="card">
       <h2>Draws &amp; Results</h2>
       <select id="drawCat"></select>
+      <p class="bk-hint">Swipe sideways to follow the bracket to the Final.</p>
       <div id="bracket" class="bracket" style="margin-top:14px"></div>
     </div>
   </section>
@@ -214,6 +245,7 @@ const CATEGORIES = [
 ];
 const REFRESH_MS = 30000;
 let sponsors = [], matches = [], photos = [], players = [], banners = [];
+let loaded = false;   // true once the first read of the sheet has finished
 
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -266,6 +298,7 @@ async function refresh(){
     notice.style.display='block';
     notice.textContent = 'Could not load the latest data right now. Please refresh in a moment.';
   }
+  loaded = true;
   renderAll();
 }
 
@@ -275,13 +308,31 @@ function buildNav(){
   nav.innerHTML = TABS.map(([id,label],i)=>`<button data-tab="${id}" class="${i===0?'active':''}">${label}</button>`).join('');
   nav.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
 }
+// Direct links: #draws opens the Draws tab, #draws/under-13-boys-singles opens that category
+const catSlug = c => c.toLowerCase().replace(/['\u2019]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+function setHash(h){
+  try{ history.replaceState(null, '', h ? '#' + h : location.pathname + location.search); }catch(e){}
+}
 function showTab(id){
   document.querySelectorAll('main section').forEach(s=>s.classList.toggle('active', s.id===id));
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active', b.dataset.tab===id));
+  if(id === 'draws') renderBracket();
+  setHash(id === 'home' ? '' : id);
+}
+function routeFromHash(){
+  const [tab, sub] = decodeURIComponent(location.hash.replace(/^#/, '')).split('/');
+  const known = TABS.some(t => t[0] === tab);
+  if(tab === 'draws' && sub){
+    const cat = CATEGORIES.find(c => catSlug(c) === sub);
+    if(cat) document.getElementById('drawCat').value = cat;
+  }
+  showTab(known ? tab : 'home');
+  if(known && tab === 'draws' && sub) setHash('draws/' + sub);
+  window.scrollTo(0, 0);
 }
 function fillStatic(){
   document.getElementById('drawCat').innerHTML = CATEGORIES.map(c=>`<option>${esc(c)}</option>`).join('');
-  document.getElementById('drawCat').addEventListener('change', renderBracket);
+  document.getElementById('drawCat').addEventListener('change', () => { renderBracket(); setHash('draws/' + catSlug(document.getElementById('drawCat').value)); });
   document.getElementById('findName').addEventListener('input', renderFind);
   const badges = CATEGORIES.map(c=>`<span class="badge">${esc(c)}</span>`).join('');
   document.getElementById('catBadges').innerHTML = badges;
@@ -327,17 +378,37 @@ function metaLine(m){
 function renderBracket(){
   const cat = document.getElementById('drawCat').value;
   const el = document.getElementById('bracket');
+  if(!loaded){ el.innerHTML = '<p class="empty">Loading the draw…</p>'; return; }
   const c = buildCategory(cat);
   if(!c){ el.innerHTML = '<p class="empty">No draw published yet for this category.</p>'; return; }
-  el.innerHTML = c.built.map((round, k) => `
-    <div class="round"><h3>${esc(c.names[k])}</h3>
-      ${round.map(m => `
-        <div class="match">
-          ${[[m.p1, m.l1],[m.p2, m.l2]].map(([p, l]) =>
-            `<div class="slot ${p && m.winner === p ? 'winner' : ''}">${esc(l)}</div>`).join('')}
-          ${metaLine(m)}
-        </div>`).join('')}
-    </div>`).join('');
+  const keep = el.scrollLeft;
+  const last = c.built.length - 1;
+  const hasChamp = c.built[last].length === 1;
+  const long = c.built.flat().some(m => (m.l1 || '').length > 26 || (m.l2 || '').length > 26);
+  const rowH = long ? 124 : 104;
+  const disp = (p, l) => p ? p : (/^winner of/i.test(l) ? 'TBD' : l);
+  const cols = c.built.map((round, k) => `<div class="bk-col bk-round">${round.map((m, i) => {
+    const next = k < last || hasChamp;
+    const paired = round.length > 1 && !(round.length % 2 === 1 && i === round.length - 1);
+    const pos = !next ? '' : (paired ? (i % 2 === 0 ? 'top' : 'bot') : 'solo');
+    const fed = k > 0 && [c.built[k-1][2*i], c.built[k-1][2*i+1]].some(f => f && f.winner && !f.bye);
+    const played = m.winner && !m.bye;
+    const rows = [[m.p1, m.l1], [m.p2, m.l2]].map(([p, l]) => {
+      const cls = m.bye && (!p || isBye(p)) ? 'bye' : !p ? 'tbd' : played ? (m.winner === p ? 'won' : 'lost') : '';
+      return `<div class="p ${cls}"><span class="nm">${esc(disp(p, l))}</span>${cls === 'won' ? '<span class="tick">&#10003;</span>' : ''}</div>`;
+    }).join('');
+    const bits = [m.score, m.court ? 'Court ' + m.court : '', m.time].filter(Boolean);
+    return `<div class="mw${k > 0 ? ' hasprev' : ''}${fed ? ' fed' : ''}${next ? ' hasnext ' + pos : ''}${played ? ' done' : ''}"><div class="m">${rows}${bits.length ? `<div class="mm">${esc(bits.join(' · '))}</div>` : ''}</div></div>`;
+  }).join('')}</div>`).join('');
+  const champ = hasChamp ? c.built[last][0].winner : '';
+  const champCol = hasChamp ? `<div class="bk-col bk-round"><div class="mw hasprev${champ ? ' fed' : ''}"><div class="champ-box"><div class="trophy">&#127942;</div><div class="cn">${champ ? esc(champ) : 'TBD'}</div></div></div></div>` : '';
+  const head = c.names.map(n => `<div class="bk-col">${esc(n)}</div>`).join('') + (hasChamp ? '<div class="bk-col">Champion</div>' : '');
+  el.innerHTML = `<div class="bk"><div class="bk-head">${head}</div><div class="bk-body" style="height:${c.built[0].length * rowH}px">${cols}${champCol}</div></div>`;
+  // grow the rows if long team names make the first-round boxes taller than the default row height
+  const boxes = el.querySelectorAll('.bk-body .bk-round:first-child .m');
+  const maxH = Math.max(0, ...Array.from(boxes).map(m => m.offsetHeight));
+  if(maxH) el.querySelector('.bk-body').style.height = (c.built[0].length * Math.max(rowH, maxH + 18)) + 'px';
+  el.scrollLeft = keep;
 }
 function renderResults(){
   const champList = document.getElementById('champList');
@@ -508,7 +579,8 @@ function renderPlayers(){
 }
 function renderAll(){ renderCarousel(); renderPlayers(); renderFind(); renderBracket(); renderResults(); renderGallery(); renderSponsors(); }
 
-buildNav(); fillStatic(); showTab('home'); renderCarousel(); refresh();
+buildNav(); fillStatic(); routeFromHash(); renderCarousel(); refresh();
+window.addEventListener('hashchange', routeFromHash);
 setInterval(() => { if(!document.hidden) refresh(); }, REFRESH_MS);
 </script>
 <footer style="text-align:center;padding:18px 16px 30px;">

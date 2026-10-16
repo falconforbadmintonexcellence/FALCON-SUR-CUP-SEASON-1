@@ -380,6 +380,18 @@ function fillStatic(){
 const matchesFor = cat => matches.filter(m => m['Category'] === cat);
 const isBye = v => /^bye$/i.test(v || '');
 
+// Winner typed as a name: capital letters, extra spaces and "A&B" vs "A & B" don't matter, and one partner's name
+// is enough when it only fits one of the two teams. Anything else is kept exactly as typed.
+const normName = s => String(s || '').toLowerCase().replace(/\s+/g, ' ').replace(/\s*&\s*/g, ' & ').trim();
+function matchTeam(w, p1, p2){
+  const x = normName(w), a = normName(p1), b = normName(p2);
+  if(x && x === a) return p1;
+  if(x && x === b) return p2;
+  const inA = !!a && a.includes(x), inB = !!b && b.includes(x);
+  if(inA && !inB) return p1;
+  if(inB && !inA) return p2;
+  return w;
+}
 const ID_PREFIX = n => /^round 1$/i.test(n) ? 'R1-' : /^quarter/i.test(n) ? 'QF' : /^semi/i.test(n) ? 'SF' : /^final$/i.test(n) ? 'F' : /round robin/i.test(n) ? 'RR' : '';
 // Works out which earlier match feeds each later match, and how the columns line up.
 // Normal brackets halve each round (8, 4, 2, 1). A draw like 5, 1, 2, 1 (byes paired with a neighbour, the other
@@ -437,8 +449,8 @@ function buildCategory(cat){
         const a = out[0], w = a.winner, lose = w ? (w === a.p1 ? a.p2 : a.p1) : '';
         [p1, l1] = i === 1 ? [lose, lose || 'Loser of Match 1'] : [w, w || 'Winner of Match 1'];
       }
-      const w = m['Winner']; let winner = '';
-      if(w) winner = (w === '1' || /^p1$/i.test(w)) ? p1 : (w === '2' || /^p2$/i.test(w)) ? p2 : w;
+      const w = (m['Winner'] || '').trim(); let winner = '';
+      if(w) winner = (w === '1' || /^p1$/i.test(w)) ? p1 : (w === '2' || /^p2$/i.test(w)) ? p2 : matchTeam(w, p1, p2);
       const bye = !rr[k] && k === 0 && (!p1 || !p2 || isBye(p1) || isBye(p2));
       if(!winner && bye){ if(p1 && !isBye(p1)) winner = p1; else if(p2 && !isBye(p2)) winner = p2; }
       if(bye){ if(!p1 || isBye(p1)) l1 = 'BYE'; if(!p2 || isBye(p2)) l2 = 'BYE'; }
